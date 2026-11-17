@@ -31,24 +31,28 @@ Les garde-fous sont dans le code, pas dans le prompt :
 - les **chiffres non sourcés** (nombres absents de tous les résultats de requête) ;
 - le nombre de **vérifications** déclenchées et d'**erreurs SQL** corrigées.
 
-### Résultats (Ministral 8B en local, Ollama)
+### Résultats — Ministral 8B en local (Ollama)
 
-| Version | Score | Chiffres non sourcés |
+| Étape | Score | Chiffres non sourcés |
 |---|---|---|
 | Prompt de base, sans vérification | 8/10 | 2 |
-| Avec nœud de vérification | 8/10 | 0 |
-| + règles SQL (COUNT, dates) et troncature explicite | 10/10 | 0 |
+| Prompt de base + vérification | 8/10 | 0 |
+| Prompt final (règles SQL), sans vérification | 10/10 | 4 |
+| **Prompt final + vérification** (3 lancements) | **10/10** | **0** |
 
-*Résultats sur un lancement par configuration ; les sorties d'un LLM varient d'un lancement à l'autre.*
+**Ce qu'on en retient :**
+- **Les règles métier du prompt font le score** : elles corrigent les requêtes fausses.
+- **La vérification fait la fiabilité** : sans elle, le modèle répond juste mais invente des chiffres dans ses analyses. Exemple réel : *« le CA de 2025 est inférieur à celui de 2024 (65 421,80 €), une baisse de près de 9 % »*, un montant qui n'apparaît dans aucune requête. Avec la vérification : 0 chiffre inventé sur trois lancements.
+- **En local (température 0), les résultats sont reproductibles** : les trois lancements donnent les mêmes réponses.
 
 ### Erreurs typiques observées sur les petits modèles
-- **Chiffres inventés** dans le commentaire (dates, moyennes) : corrigé par le nœud de vérification.
-- **Requêtes fausses** : comparaison de `strftime('%Y-%m')` avec une date complète (un mois exclu), moyenne par ligne au lieu de par commande, sous-requête qui compte plusieurs fois les ventes, lignes comptées dans un résultat tronqué à 50. Corrigé par des règles métier explicites et un message de troncature clair.
+- **Chiffres inventés** dans le commentaire (comparaisons, moyennes, pourcentages) : corrigés par le nœud de vérification.
+- **Requêtes fausses** : comparaison de `strftime('%Y-%m')` avec une date complète (un mois exclu), moyenne par ligne au lieu de par commande, sous-requête qui compte plusieurs fois les ventes, lignes comptées dans un résultat tronqué à 50. Corrigées par des règles métier explicites et un message de troncature clair.
 
 ## Limites et pistes
-- Le vérificateur contrôle les **nombres**, pas les **affirmations qualitatives** (« en hausse », « probablement »). Prochaine étape : un juge ou une réponse limitée aux faits.
+- Le vérificateur contrôle les **nombres**, pas les **affirmations qualitatives** (« en hausse », « probablement ») ni les noms (une catégorie mal recopiée). Prochaine étape : un juge, ou une réponse limitée aux faits.
 - Contrôle de vraisemblance des résultats (un CA mensuel ne peut pas dépasser le CA total).
-- Plusieurs lancements par configuration pour mesurer la variance.
+- Élargir le banc d'essai au-delà de 10 questions.
 
 ## Installation
 
