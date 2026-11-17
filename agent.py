@@ -34,6 +34,7 @@ Règles métier :
 Règles SQL :
 - Pour une période, filtre sur la colonne date brute : date >= '2026-04-01' AND date < '2026-07-01'. Ne compare jamais le résultat de strftime à une date complète.
 - Tout total, moyenne ou pourcentage se calcule en SQL, jamais de tête.
+- Pour compter des éléments, utilise COUNT en SQL. Ne compte jamais les lignes d'un résultat.
 - Si un résultat semble incomplet (mois manquant, période plus courte que demandé), suppose que ta requête est fausse et corrige-la.
 
 Règles de réponse :
@@ -45,16 +46,20 @@ Réponse finale : en français, courte. Les chiffres clés (avec unités), puis 
 
 
 def creer_llm():
-    """Choisit le modèle via la variable LLM : claude (par défaut) ou mistral."""
-    if os.getenv("LLM", "claude") == "mistral":
+    """Choisit le modèle via la variable LLM : claude (par défaut), mistral (API) ou ollama (local)."""
+    fournisseur = os.getenv("LLM", "claude")
+    if fournisseur == "ollama":
+        from langchain_ollama import ChatOllama
+        return ChatOllama(model=os.getenv("OLLAMA_MODEL", "ministral-3:8b"), temperature=0)
+    if fournisseur == "mistral":
         from langchain_core.rate_limiters import InMemoryRateLimiter
         from langchain_mistralai import ChatMistralAI
-        limiteur = InMemoryRateLimiter(requests_per_second=0.5, check_every_n_seconds=0.1, max_bucket_size=1)
+        limiteur = InMemoryRateLimiter(requests_per_second=0.07, check_every_n_seconds=0.5, max_bucket_size=1)
         return ChatMistralAI(
-            model=os.getenv("MISTRAL_MODEL", "ministral-14b-2512"),
+            model=os.getenv("MISTRAL_MODEL", "ministral-8b-2512"),
             temperature=0,
-            rate_limiter=limiteur,   # au plus 1 appel toutes les 2 secondes
-            max_retries=5,
+            rate_limiter=limiteur,   # environ 4 appels par minute (offre gratuite)
+            max_retries=0,
         )
     return ChatAnthropic(model="claude-haiku-5-5", max_tokens=2048)
 

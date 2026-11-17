@@ -1,5 +1,6 @@
 """Détection des chiffres non sourcés, partagée entre l'agent et le banc d'essai."""
 import re
+from datetime import date
 
 from langchain_core.messages import ToolMessage
 
@@ -16,13 +17,15 @@ def nombres(texte: str) -> list[float]:
 
 def nombres_non_sources(reponse: str, messages) -> list[float]:
     """Nombres cités dans la réponse qui n'apparaissent dans aucun résultat d'outil."""
+    aujourdhui = date.today()
+    connus = {aujourdhui.day, aujourdhui.year}  # la date du jour vient du prompt système
     sources = []
     for m in messages:
         if isinstance(m, ToolMessage):
             sources += nombres(m.content)
     suspects = []
     for n in nombres(reponse):
-        if n <= 12:  # numérotation de liste, mois, petits entiers
+        if n <= 12 or n in connus:  # numérotation, mois, petits entiers, date du jour
             continue
         if not any(abs(n - s) <= max(1, abs(s) * TOLERANCE) for s in sources):
             suspects.append(n)

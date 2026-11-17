@@ -1,4 +1,4 @@
-"""Banc d'essai : mesure le taux de bonnes réponses de l'agent (Claude vs Mistral, avec ou sans vérification)."""
+"""Banc d'essai : mesure le taux de bonnes réponses de l'agent (Claude, Mistral API ou local, avec ou sans vérification)."""
 import json
 import os
 import sqlite3
@@ -10,6 +10,8 @@ from agent import MARQUEUR, VERIF, graphe, texte_reponse
 from verif import TOLERANCE, nombres, nombres_non_sources
 
 DB = os.getenv("DATA_DB", "maison_verde.db")
+FOURNISSEUR = os.getenv("LLM", "claude")
+PAUSE = 20 if FOURNISSEUR == "mistral" else 1  # l'offre gratuite Mistral limite fortement la fréquence
 
 
 def valeur_attendue(sql: str):
@@ -30,6 +32,11 @@ def requetes_sql(messages) -> list[str]:
             for tc in m.tool_calls if tc["args"].get("requete")]
 
 
+def nom_modele() -> str:
+    return {"mistral": os.getenv("MISTRAL_MODEL", "ministral-8b-2512"),
+            "ollama": os.getenv("OLLAMA_MODEL", "ministral-3:8b")}.get(FOURNISSEUR, "claude")
+
+
 def main():
     agent = graphe.compile()
     with open("questions.json", encoding="utf-8") as f:
@@ -48,6 +55,9 @@ def main():
             verifs += sum(1 for m in messages
                           if isinstance(m, HumanMessage) and str(m.content).startswith(MARQUEUR))
         except Exception as e:
+            if "429" in str(e):
+                print("⛔ Limite Mistral atteinte (429) : arrêt de l'éval. Réessaie plus tard.")
+                return
             reponse = f"[PLANTAGE] {e}"
 
         ok = est_correct(reponse, attendu)
@@ -62,10 +72,9 @@ def main():
             for sql in requetes_sql(messages):
                 print(f"   🔍 SQL : {sql}")
         print()
-        time.sleep(3)
+        time.sleep(PAUSE)
 
-    nom = os.getenv("MISTRAL_MODEL", "ministral-14b-2512") if os.getenv("LLM") == "mistral" else "claude"
-    print(f"Modèle : {nom} | vérif : {'oui' if VERIF else 'non'} | Score : {bonnes}/{len(questions)} "
+    print(f"Modèle : {nom_modele()} | vérif : {'oui' if VERIF else 'non'} | Score : {bonnes}/{len(questions)} "
           f"| chiffres non sourcés : {total_suspects} | vérifications : {verifs} "
           f"| erreurs SQL : {erreurs_sql} | durée : {time.time() - debut:.0f} s")
 

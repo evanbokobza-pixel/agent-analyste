@@ -64,7 +64,7 @@ def decrire_base() -> str:
 @tool
 def executer_sql(requete: str) -> str:
     """Exécute une requête SQL (SQLite, lecture seule) et renvoie le résultat sous forme de tableau.
-    Maximum 50 lignes : utiliser GROUP BY, ORDER BY et LIMIT pour résumer."""
+    Maximum 50 lignes : utiliser GROUP BY, ORDER BY, LIMIT ou COUNT pour résumer."""
     try:
         colonnes, lignes = _executer(requete)
     except Exception as e:
@@ -74,7 +74,10 @@ def executer_sql(requete: str) -> str:
     tronque = len(lignes) > MAX_LIGNES
     lignes = lignes[:MAX_LIGNES]
     texte = " | ".join(colonnes) + "\n" + "\n".join(" | ".join(str(v) for v in l) for l in lignes)
-    return texte + ("\n(résultat tronqué à 50 lignes)" if tronque else "")
+    if tronque:
+        texte += ("\n⚠️ RÉSULTAT TRONQUÉ : seules les 50 premières lignes sont affichées. "
+                  "Pour compter, utilise COUNT(*) dans la requête au lieu de compter les lignes.")
+    return texte
 
 
 @tool
