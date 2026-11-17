@@ -1,0 +1,22 @@
+[
+  {"question": "Quel est le chiffre d'affaires total des commandes livrées ?",
+   "sql": "SELECT ROUND(SUM(l.quantite * l.prix_unitaire)) FROM lignes_commande l JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée'"},
+  {"question": "Combien de commandes ont été livrées ?",
+   "sql": "SELECT COUNT(*) FROM commandes WHERE statut = 'livrée'"},
+  {"question": "Quelle catégorie de produits génère le plus de chiffre d'affaires ?",
+   "sql": "SELECT p.categorie FROM lignes_commande l JOIN produits p ON p.id = l.produit_id JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée' GROUP BY p.categorie ORDER BY SUM(l.quantite * l.prix_unitaire) DESC LIMIT 1"},
+  {"question": "Combien de clients y a-t-il dans la base ?",
+   "sql": "SELECT COUNT(*) FROM clients"},
+  {"question": "Quel a été le chiffre d'affaires des commandes livrées en 2025 ?",
+   "sql": "SELECT ROUND(SUM(l.quantite * l.prix_unitaire)) FROM lignes_commande l JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée' AND strftime('%Y', c.date) = '2025'"},
+  {"question": "Combien de produits différents sont au catalogue ?",
+   "sql": "SELECT COUNT(*) FROM produits"},
+  {"question": "Quel est le panier moyen des commandes livrées ?",
+   "sql": "SELECT ROUND(SUM(l.quantite * l.prix_unitaire) / COUNT(DISTINCT c.id)) FROM lignes_commande l JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée'"},
+  {"question": "Quel a été le chiffre d'affaires du meilleur mois de 2025 ?",
+   "sql": "SELECT ROUND(MAX(ca)) FROM (SELECT strftime('%m', c.date) AS mois, SUM(l.quantite * l.prix_unitaire) AS ca FROM lignes_commande l JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée' AND strftime('%Y', c.date) = '2025' GROUP BY mois)"},
+  {"question": "Quel a été le chiffre d'affaires des commandes livrées au 2e trimestre 2026 ?",
+   "sql": "SELECT ROUND(SUM(l.quantite * l.prix_unitaire)) FROM lignes_commande l JOIN commandes c ON c.id = l.commande_id WHERE c.statut = 'livrée' AND c.date BETWEEN '2026-04-01' AND '2026-06-30'"},
+  {"question": "Combien de clients ont passé au moins 5 commandes livrées ?",
+   "sql": "SELECT COUNT(*) FROM (SELECT client_id FROM commandes WHERE statut = 'livrée' GROUP BY client_id HAVING COUNT(*) >= 5)"}
+]

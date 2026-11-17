@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent analyste – Maison Lumière</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --blue:#2152d9; --ink:#16181d; --mute:#667085; --bg:#f3f5f9; --line:#e2e6ee; --dark:#0f1729; --dline:#25304a; }
+body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); height: 100vh; display: flex; flex-direction: column; }
+header { padding: 18px 28px 12px; }
+header h1 { font-size: 24px; font-weight: 800; } header h1 span { color: var(--blue); }
+header p { color: var(--mute); font-size: 14px; margin-top: 2px; }
+main { flex: 1; display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; padding: 0 28px 22px; min-height: 0; }
+.panel { border-radius: 14px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.chat { background: #fff; border: 1px solid var(--line); }
+.back { background: var(--dark); border: 1px solid var(--dline); color: #e6ebf5; }
+.ph { padding: 13px 18px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.back .ph { border-color: var(--dline); }
+.ph small { margin-left: auto; font-weight: 400; color: var(--mute); font-size: 12px; }
+.fil { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.q { align-self: flex-end; max-width: 85%; background: var(--blue); color: #fff; padding: 10px 14px; border-radius: 14px 14px 4px 14px; font-size: 15px; }
+.a { align-self: flex-start; max-width: 96%; background: #f4f6fb; border: 1px solid var(--line); padding: 12px 14px; border-radius: 14px 14px 14px 4px; font-size: 15px; line-height: 1.5; }
+.a ul { margin: 6px 0 6px 18px; } .a img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--line); background: #fff; }
+.attente { color: var(--mute); font-size: 14px; display: flex; gap: 8px; align-items: center; }
+.sp { width: 15px; height: 15px; border: 3px solid #cfd8ea; border-top-color: var(--blue); border-radius: 50%; animation: r .8s linear infinite; }
+@keyframes r { to { transform: rotate(360deg); } }
+form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+input { flex: 1; border: 2px solid var(--line); border-radius: 10px; padding: 11px 13px; font-size: 15px; font-family: inherit; outline: none; }
+input:focus { border-color: var(--blue); }
+button { background: var(--blue); color: #fff; border: 0; border-radius: 10px; padding: 0 18px; font-weight: 700; font-size: 15px; cursor: pointer; }
+button:disabled { opacity: .5; }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.sugg span { font-size: 13px; background: #eef2fb; color: var(--blue); padding: 6px 10px; border-radius: 999px; cursor: pointer; }
+.etape { border: 1px solid var(--dline); background: #141e33; border-radius: 10px; padding: 10px 12px; font-size: 13px; animation: f .3s ease-out; }
+@keyframes f { from { opacity: 0; transform: translateY(6px); } }
+.etape .t { font-weight: 700; font-size: 11.5px; letter-spacing: .7px; text-transform: uppercase; color: #7dd3fc; margin-bottom: 5px; }
+.etape pre { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 12px; line-height: 1.45; }
+.etape .sql { color: #cfd8ea; }
+.etape .res { color: #4ade80; margin-top: 6px; max-height: 150px; overflow: auto; }
+.etape .res.err { color: #f87171; }
+.reflexion { display: flex; align-items: center; gap: 8px; color: #a5b4fc; font-size: 13px; padding: 4px 2px; }
+.reflexion .sp { width: 13px; height: 13px; border-width: 2px; border-color: #2a3757; border-top-color: #a5b4fc; }
+.etape .encours { display: flex; align-items: center; gap: 8px; color: #8b97b0; font-size: 12px; margin-top: 6px; }
+.etape .encours .sp { width: 12px; height: 12px; border-width: 2px; border-color: #2a3757; border-top-color: #7dd3fc; }
+.sep { color: #8b97b0; font-size: 12px; text-align: center; margin: 4px 0; }
+@media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<header><h1>Agent analyste <span>Maison Lumière</span></h1>
+<p>Posez une question sur les ventes : l'agent écrit le SQL, l'exécute, vérifie et trace le graphique. Données fictives.</p></header>
+<main>
+  <section class="panel chat">
+    <div class="ph">💬 Question<small>lecture seule sur la base</small></div>
+    <div class="fil" id="fil"></div>
+    <div class="sugg" id="sugg">
+      <span>Quelle catégorie rapporte le plus ?</span>
+      <span>Comment a évolué le chiffre d'affaires mois par mois ?</span>
+      <span>La fête des mères 2026 a-t-elle fait mieux que 2025 ?</span>
+      <span>Combien peut-on espérer faire d'ici Noël ?</span>
+    </div>
+    <form id="form"><input id="champ" placeholder="Votre question…" autocomplete="off"><button id="btn">Envoyer</button></form>
+  </section>
+  <section class="panel back">
+    <div class="ph">⚙️ Coulisses de l'agent<small>LangGraph</small></div>
+    <div class="fil" id="coulisses"></div>
+  </section>
+</main>
+<script>
+const fil = document.getElementById('fil'), coulisses = document.getElementById('coulisses');
+const form = document.getElementById('form'), champ = document.getElementById('champ'), btn = document.getElementById('btn');
+let session = null;
+
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function markdown(t) {
+  const lignes = esc(t).split('\n'); let html = '', liste = false;
+  for (let l of lignes) {
+    l = l.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    const item = l.match(/^\s*(?:[-•]|\d+\.)\s+(.*)/);
+    if (item) { if (!liste) { html += '<ul>'; liste = true; } html += '<li>' + item[1] + '</li>'; continue; }
+    if (liste) { html += '</ul>'; liste = false; }
+    html += l.trim() ? l + '<br>' : '<div style="height:6px"></div>';
+  }
+  return html + (liste ? '</ul>' : '');
+}
+function bulle(html, cls) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; fil.appendChild(d); fil.scrollTop = fil.scrollHeight; return d; }
+
+const libelles = { decrire_base: '🔎 Lecture de la structure', executer_sql: '🧮 Requête SQL',
+  creer_graphique: '📊 Graphique', prevoir_chiffre_affaires: '🔮 Prévision' };
+const cartes = {};
+let reflexion = null;
+function reflechir() {   // indicateur « l'agent réfléchit » pendant que le LLM décide de la suite
+  if (reflexion) return;
+  reflexion = document.createElement('div'); reflexion.className = 'reflexion';
+  reflexion.innerHTML = '<div class="sp"></div>🧠 L\'agent réfléchit à la prochaine étape…';
+  coulisses.appendChild(reflexion); coulisses.scrollTop = coulisses.scrollHeight;
+}
+function arreterReflexion() { if (reflexion) { reflexion.remove(); reflexion = null; } }
+
+function nouvelleEtape(ev) {
+  const d = document.createElement('div'); d.className = 'etape';
+  d.innerHTML = '<div class="t">' + esc(libelles[ev.outil] || ev.outil) + '</div>'
+    + (ev.requete ? '<pre class="sql">' + esc(ev.requete.trim()) + '</pre>' : '')
+    + '<div class="encours"><div class="sp"></div>en cours…</div>';
+  coulisses.appendChild(d); coulisses.scrollTop = coulisses.scrollHeight;
+  cartes[ev.id] = d;
+}
+function resultatEtape(ev) {
+  const d = cartes[ev.id]; if (!d) return;
+  const err = ev.resultat.startsWith('ERREUR');
+  d.querySelector('.encours').outerHTML = '<pre class="res' + (err ? ' err' : '') + '">' + esc(ev.resultat) + '</pre>';
+  coulisses.scrollTop = coulisses.scrollHeight;
+}
+
+async function envoyer(question) {
+  if (!question.trim()) return;
+  document.getElementById('sugg').style.display = 'none';
+  bulle(esc(question), 'q'); champ.value = ''; btn.disabled = true;
+  coulisses.insertAdjacentHTML('beforeend', '<div class="sep">— ' + esc(question) + ' —</div>');
+  const attente = bulle('<div class="sp"></div>L\'agent analyse les données…', 'attente');
+  try {
+    const r = await fetch('/question', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, session }) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    // Lecture du flux : une ligne JSON par événement, affichée dès qu'elle arrive
+    const lecteur = r.body.getReader(), dec = new TextDecoder();
+    let tampon = '';
+    while (true) {
+      const { value, done } = await lecteur.read();
+      if (done) break;
+      tampon += dec.decode(value, { stream: true });
+      let i;
+      while ((i = tampon.indexOf('\n')) >= 0) {
+        const ligne = tampon.slice(0, i).trim(); tampon = tampon.slice(i + 1);
+        if (!ligne) continue;
+        const ev = JSON.parse(ligne);
+        if (ev.type === 'debut') { session = ev.session; reflechir(); }
+        else if (ev.type === 'appel') { arreterReflexion(); nouvelleEtape(ev); }
+        else if (ev.type === 'resultat') { resultatEtape(ev); reflechir(); }
+        else if (ev.type === 'erreur') throw new Error(ev.message);
+        else if (ev.type === 'fin') {
+          arreterReflexion(); attente.remove();
+          bulle(markdown(ev.reponse) + ev.graphiques.map(g => '<img src="' + g + '" alt="graphique">').join(''), 'a');
+        }
+      }
+    }
+  } catch (e) {
+    arreterReflexion(); attente.remove(); bulle('Erreur : ' + esc(e.message), 'a');
+  }
+  btn.disabled = false; champ.focus();
+}
+form.addEventListener('submit', e => { e.preventDefault(); envoyer(champ.value); });
+document.querySelectorAll('#sugg span').forEach(s => s.addEventListener('click', () => envoyer(s.textContent)));
+</script>
+</body></html>
